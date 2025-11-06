@@ -3,11 +3,10 @@ version: "3.8"
 services:
   attio-mcp:
     build:
-      context: /Users/alessadro/Developer/attio-mcp
+      context: .
+      dockerfile: Dockerfile
     image: attio-mcp:latest
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
       MCP_TRANSPORT: ${MCP_TRANSPORT:-sse}
       MCP_HOST: 0.0.0.0

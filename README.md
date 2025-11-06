@@ -92,7 +92,7 @@ If not set, the server runs without authentication (useful for development).
 2. Build and start the container:
 
    ```bash
-   docker compose up --build
+   docker compose up --build --env-file .env
    ```
 
    The MCP server listens on the port specified by `MCP_PORT` (defaults to `8080`). Set `MCP_TRANSPORT=stdio` for local CLI usage or `sse` when exposing over HTTP.
@@ -101,7 +101,7 @@ If not set, the server runs without authentication (useful for development).
 
 1. Create a new project in Coolify (e.g., `attio-mcp`) to keep it isolated from existing services.
 2. Add a Docker Compose application pointing to this repository and select the `docker-compose.yml` file.
-3. Configure environment variables in the Coolify UI:
+3. Configure environment variables in the Coolify UI (Coolify injects them at runtime, so no `.env` file is required on the server):
    - `ATTIO_API_KEY`
    - Optionally `MCP_BEARER_TOKEN`
    - `MCP_TRANSPORT=sse`
