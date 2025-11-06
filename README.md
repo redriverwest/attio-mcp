@@ -89,10 +89,10 @@ If not set, the server runs without authentication (useful for development).
    LOG_LEVEL=INFO
    ```
 
-2. Build and start the container:
+2. Build and start the container (the extra override file publishes the port and reads your `.env`):
 
    ```bash
-   docker compose up --build --env-file .env
+   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
    ```
 
    The MCP server listens on the port specified by `MCP_PORT` (defaults to `8080`). Set `MCP_TRANSPORT=stdio` for local CLI usage or `sse` when exposing over HTTP.
@@ -107,6 +107,6 @@ If not set, the server runs without authentication (useful for development).
    - `MCP_TRANSPORT=sse`
    - `MCP_PORT` (match the exposed port, default `8080`)
 4. Set the desired domain/FQDN in Coolify to match the `coolify.fqdn` label defined in `docker-compose.yml` (or override via `COOLIFY_FQDN`).
-5. Deploy the application. Coolify will handle image builds, networking, and SSL termination.
+5. Deploy the application. Coolify will handle image builds, networking, and SSL termination. Because the Compose file uses `expose` instead of `ports`, Coolify binds the internal `MCP_PORT` to its reverse proxy and avoids host port collisions.
 
 Adjust resource limits or scaling options within Coolify as needed for your OVH server. Ensure the `coolify` Docker network exists (it is created automatically on first Coolify deployment).
