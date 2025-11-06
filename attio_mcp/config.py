@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     attio_api_key: str
     attio_api_base_url: str = "https://api.attio.com/v2"
 
-    # MCP Server Authentication
-    mcp_bearer_token: str
+    # MCP Server Authentication (optional - if not set, auth is disabled)
+    mcp_bearer_token: str | None = None
 
     # Server Configuration
     log_level: str = "INFO"

@@ -1,9 +1,11 @@
 import json
 import logging
 
+from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
 
 from attio_mcp.attio_client import AttioClient
+from attio_mcp.auth import BearerTokenVerifier
 from attio_mcp.config import settings
 
 # Configure logging
@@ -13,8 +15,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize FastMCP server
-mcp = FastMCP("attio-mcp")
+# Initialize authentication if token is configured
+if settings.mcp_bearer_token:
+    logger.info("Bearer token authentication enabled")
+    token_verifier = BearerTokenVerifier()
+    auth_settings = AuthSettings(
+        issuer_url="https://attio-mcp.local",  # Local issuer for bearer token auth
+        resource_server_url="https://attio-mcp.local",  # Resource server for bearer token auth
+        required_scopes=None,
+    )
+    mcp = FastMCP("attio-mcp", token_verifier=token_verifier, auth=auth_settings)
+else:
+    logger.warning("Bearer token not configured - authentication disabled")
+    mcp = FastMCP("attio-mcp")
 
 # Initialize Attio client
 attio_client = AttioClient()

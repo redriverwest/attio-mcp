@@ -62,8 +62,65 @@ cp .env.example .env
 
 Edit `.env` and add your:
 
-- Attio API key
-- MCP bearer token (generate a secure random string)
+- **Attio API key** (required): Get from [Attio's API settings](https://app.attio.com/settings/api)
+- **MCP bearer token** (optional): For authentication. Generate with:
+  ```bash
+  python -c "import secrets; print(secrets.token_urlsafe(32))"
+  ```
+
+**Note**: If `MCP_BEARER_TOKEN` is not set, the server will run without authentication (useful for development)
+
+## Authentication
+
+The server supports **bearer token authentication** using the MCP SDK's built-in token verification.
+
+### How It Works
+
+1. **Token Configuration**: Set `MCP_BEARER_TOKEN` in your `.env` file
+2. **Token Verification**: The server uses a custom `BearerTokenVerifier` to validate incoming tokens
+3. **Secure Access**: Only requests with a valid bearer token are allowed
+
+### Authentication Modes
+
+**With Authentication** (Production):
+
+```bash
+# .env file
+MCP_BEARER_TOKEN=your_secure_token_here
+```
+
+The server will:
+
+- ✅ Verify bearer tokens on all requests
+- ✅ Reject requests without valid tokens
+- ✅ Log authentication attempts
+
+**Without Authentication** (Development):
+
+```bash
+# .env file - MCP_BEARER_TOKEN not set or empty
+```
+
+The server will:
+
+- ⚠️ Accept all requests without verification
+- ⚠️ Log a warning on startup
+
+### Using the Bearer Token
+
+When making requests to the MCP server, include the token in the Authorization header:
+
+```bash
+Authorization: Bearer your_secure_token_here
+```
+
+### Security Best Practices
+
+1. **Generate Strong Tokens**: Use cryptographically secure random tokens
+2. **Keep Tokens Secret**: Never commit tokens to version control
+3. **Rotate Tokens**: Change tokens periodically
+4. **Use HTTPS**: Always use encrypted connections in production
+5. **Enable Authentication**: Always use bearer token auth in production
 
 ## Development
 
