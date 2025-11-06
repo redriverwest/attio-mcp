@@ -1,14 +1,13 @@
 # Attio MCP Server
 
-A Model Context Protocol (MCP) server for integrating Attio CRM with AI agents.
+MCP server for integrating Attio CRM with AI agents.
 
 ## Features
 
-- 🏢 **Company Management**: Search companies, get details, and access notes
-- 👥 **People Management**: Search people, get details, and access notes
+- 🏢 **Companies**: Search companies, get details, and access notes
+- 👥 **People**: Search people, get details, and access notes
 - 🔒 **Secure**: Bearer token authentication for API access
 - 🐳 **Docker Ready**: Containerized for easy deployment
-- ⚡ **Efficient**: Built with modern Python async patterns
 
 ## Prerequisites
 
@@ -18,165 +17,58 @@ A Model Context Protocol (MCP) server for integrating Attio CRM with AI agents.
 
 ## Installation
 
-### 1. Install UV (if not already installed)
-
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
+# Clone the repository
+git clone https://github.com/redriverwest/attio-mcp.git
+cd attio-mcp
 
-### 2. Clone and Setup
-
-```bash
-cd /Users/alessadro/Developer/attio-mcp
-```
-
-### 3. Create Virtual Environment
-
-```bash
+# Create virtual environment
 uv venv
-```
 
-This creates a `.venv` directory with your virtual environment.
-
-### 4. Activate Virtual Environment
-
-```bash
+# Activate virtual environment
 source .venv/bin/activate
-```
 
-### 5. Install Dependencies
-
-```bash
-# Install production dependencies
+# Install dependencies
 uv pip install -e .
-
-# Install development dependencies (optional)
-uv pip install -e ".[dev]"
 ```
 
-### 6. Configure Environment
+After installation, configure your environment:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and add your:
+Edit `.env` and add your **Attio API key** from [Attio's API settings](https://app.attio.com/settings/api).
 
-- **Attio API key** (required): Get from [Attio's API settings](https://app.attio.com/settings/api)
-- **MCP bearer token** (optional): For authentication. Generate with:
-  ```bash
-  python -c "import secrets; print(secrets.token_urlsafe(32))"
-  ```
+## Tools
 
-**Note**: If `MCP_BEARER_TOKEN` is not set, the server will run without authentication (useful for development)
+This MCP server provides the following tools for working with Attio CRM data:
+
+- **search_companies**: Search for companies by name or criteria
+- **get_company_details**: Retrieve detailed information about a specific company
+- **get_company_notes**: Fetch notes and activity history for a company
+- **search_people**: Search for people by name or criteria
+- **get_person_details**: Retrieve detailed information about a specific person
+- **get_person_notes**: Fetch notes and activity history for a person
 
 ## Authentication
 
-The server supports **bearer token authentication** using the MCP SDK's built-in token verification.
-
-### How It Works
-
-1. **Token Configuration**: Set `MCP_BEARER_TOKEN` in your `.env` file
-2. **Token Verification**: The server uses a custom `BearerTokenVerifier` to validate incoming tokens
-3. **Secure Access**: Only requests with a valid bearer token are allowed
-
-### Authentication Modes
-
-**With Authentication** (Production):
+The server optionally supports bearer token authentication. To enable it, set `MCP_BEARER_TOKEN` in your `.env` file:
 
 ```bash
-# .env file
 MCP_BEARER_TOKEN=your_secure_token_here
 ```
 
-The server will:
-
-- ✅ Verify bearer tokens on all requests
-- ✅ Reject requests without valid tokens
-- ✅ Log authentication attempts
-
-**Without Authentication** (Development):
+Generate a token with:
 
 ```bash
-# .env file - MCP_BEARER_TOKEN not set or empty
+python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-The server will:
-
-- ⚠️ Accept all requests without verification
-- ⚠️ Log a warning on startup
-
-### Using the Bearer Token
-
-When making requests to the MCP server, include the token in the Authorization header:
+When `MCP_BEARER_TOKEN` is set, all requests require the token in the Authorization header:
 
 ```bash
 Authorization: Bearer your_secure_token_here
 ```
 
-### Security Best Practices
-
-1. **Generate Strong Tokens**: Use cryptographically secure random tokens
-2. **Keep Tokens Secret**: Never commit tokens to version control
-3. **Rotate Tokens**: Change tokens periodically
-4. **Use HTTPS**: Always use encrypted connections in production
-5. **Enable Authentication**: Always use bearer token auth in production
-
-## Development
-
-### Running the Server
-
-```bash
-# Make sure you're in the project directory with venv activated
-source .venv/bin/activate
-python -m attio_mcp.server
-```
-
-Or run directly:
-
-```bash
-python attio_mcp/server.py
-```
-
-### Code Quality
-
-```bash
-# Format code
-black .
-
-# Lint code
-ruff check .
-
-# Type checking
-mypy attio_mcp/
-```
-
-### Testing
-
-```bash
-pytest
-```
-
-## Docker Deployment
-
-Coming soon...
-
-## Project Structure
-
-```
-attio-mcp/
-├── attio_mcp/          # Main package
-│   ├── __init__.py
-│   ├── server.py       # MCP server implementation
-│   ├── attio_client.py # Attio API client
-│   ├── config.py       # Configuration management
-│   └── tools/          # MCP tools
-├── tests/              # Test suite
-├── pyproject.toml      # Project configuration
-├── Dockerfile          # Docker configuration
-└── README.md           # This file
-```
-
-## License
-
-MIT
+If not set, the server runs without authentication (useful for development).
