@@ -278,29 +278,3 @@ class AttioClient:
         except Exception as e:
             logger.error(f"Error getting person notes: {e}", exc_info=True)
             raise
-
-
-async def main() -> None:
-    """Main function to demonstrate API usage."""
-    client = AttioClient()
-    try:
-        # result = await client.search_companies(query="ZML")
-        # print(result)
-
-        # company_id = "7728e3f0-d620-4b42-bb60-9588dd749050"
-
-        # # result = await client.get_company_details(company_id)
-        # result = await client.get_company_notes(company_id)
-
-        # result = await client.search_people(query="Alessandro Ciffo")
-        person_id = "6e398eab-40b9-53e1-bdd8-7eac48f752c0"
-        result = await client.get_person_details(person_id)
-        print(result)
-    finally:
-        await client.close()
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(main())
