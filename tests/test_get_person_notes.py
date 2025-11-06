@@ -1,4 +1,4 @@
-"""Tests for get_company_notes functionality."""
+"""Tests for get_person_notes functionality."""
 
 from unittest.mock import MagicMock, patch
 
@@ -8,20 +8,20 @@ from attio_mcp.attio_client import AttioClient
 
 
 @pytest.mark.asyncio
-async def test_get_company_notes_success():
-    """Test successfully retrieving company notes."""
-    company_id = "0000f69b-511f-4321-ac32-3e4c2c93894c"
+async def test_get_person_notes_success():
+    """Test successfully retrieving person notes."""
+    person_id = "person-abc-123"
     mock_response = {
         "data": [
             {
                 "id": {
                     "record_id": "note-123",
-                    "parent_object": "companies",
-                    "parent_record_id": company_id,
+                    "parent_object": "people",
+                    "parent_record_id": person_id,
                 },
-                "title": "Discussion with CEO",
-                "content_plaintext": "Discussed partnership opportunities.",
-                "content_html": "Discussed partnership opportunities and technical integration.",
+                "title": "Initial Meeting",
+                "content_plaintext": "Met with Jane to discuss partnership opportunities.",
+                "content_html": "<p>Met with Jane to discuss partnership opportunities.</p>",
                 "created_at": "2024-11-15T10:30:00.000000000Z",
                 "created_by": {
                     "type": "workspace-member",
@@ -33,12 +33,12 @@ async def test_get_company_notes_success():
             {
                 "id": {
                     "record_id": "note-124",
-                    "parent_object": "companies",
-                    "parent_record_id": company_id,
+                    "parent_object": "people",
+                    "parent_record_id": person_id,
                 },
-                "title": "Q4 Planning Session",
-                "content_plaintext": "Review of annual roadmap and budget allocation.",
-                "content_html": "<p>Review of annual roadmap and budget allocation.</p>",
+                "title": "Follow-up Call",
+                "content_plaintext": "Discussed technical requirements and timeline.",
+                "content_html": "<p>Discussed technical requirements and timeline.</p>",
                 "created_at": "2024-10-20T14:15:00.000000000Z",
                 "created_by": {
                     "type": "workspace-member",
@@ -58,7 +58,7 @@ async def test_get_company_notes_success():
         mock_resp.raise_for_status.return_value = None
         mock_get.return_value = mock_resp
 
-        result = await client.get_company_notes(company_id=company_id)
+        result = await client.get_person_notes(person_id=person_id)
 
         # Verify the correct endpoint was called
         mock_get.assert_called_once()
@@ -67,22 +67,22 @@ async def test_get_company_notes_success():
 
         # Verify the parameters
         params = call_args[1]["params"]
-        assert params["parent_object"] == "companies"
-        assert params["parent_record_id"] == company_id
+        assert params["parent_object"] == "people"
+        assert params["parent_record_id"] == person_id
 
         # Verify the result
         assert result == mock_response
         assert len(result["data"]) == 2
-        assert result["data"][0]["title"] == "Discussion with CEO"
-        assert result["data"][1]["title"] == "Q4 Planning Session"
+        assert result["data"][0]["title"] == "Initial Meeting"
+        assert result["data"][1]["title"] == "Follow-up Call"
 
     await client.close()
 
 
 @pytest.mark.asyncio
-async def test_get_company_notes_empty():
-    """Test retrieving company with no notes."""
-    company_id = "test-company-id"
+async def test_get_person_notes_empty():
+    """Test retrieving person with no notes."""
+    person_id = "test-person-id"
     mock_response = {"data": []}
 
     client = AttioClient()
@@ -93,7 +93,7 @@ async def test_get_company_notes_empty():
         mock_resp.raise_for_status.return_value = None
         mock_get.return_value = mock_resp
 
-        result = await client.get_company_notes(company_id=company_id)
+        result = await client.get_person_notes(person_id=person_id)
 
         # Verify the result
         assert result == mock_response
@@ -103,9 +103,9 @@ async def test_get_company_notes_empty():
 
 
 @pytest.mark.asyncio
-async def test_get_company_notes_not_found():
-    """Test handling when company is not found (404) - should return empty list."""
-    company_id = "non-existent-id"
+async def test_get_person_notes_not_found():
+    """Test handling when person is not found (404) - should return empty list."""
+    person_id = "non-existent-id"
 
     client = AttioClient()
     with patch.object(client.client, "get") as mock_get:
@@ -123,7 +123,7 @@ async def test_get_company_notes_not_found():
             response=Response(404),
         )
 
-        result = await client.get_company_notes(company_id=company_id)
+        result = await client.get_person_notes(person_id=person_id)
 
         # For notes, 404 should return empty list, not raise an error
         assert result == {"data": []}
@@ -132,9 +132,9 @@ async def test_get_company_notes_not_found():
 
 
 @pytest.mark.asyncio
-async def test_get_company_notes_api_error():
+async def test_get_person_notes_api_error():
     """Test handling API errors (non-404)."""
-    company_id = "test-company-id"
+    person_id = "test-person-id"
 
     client = AttioClient()
     with patch.object(client.client, "get") as mock_get:
@@ -153,26 +153,26 @@ async def test_get_company_notes_api_error():
         )
 
         with pytest.raises(Exception, match="Attio API error"):
-            await client.get_company_notes(company_id=company_id)
+            await client.get_person_notes(person_id=person_id)
 
     await client.close()
 
 
 @pytest.mark.asyncio
-async def test_get_company_notes_with_multiple_fields():
+async def test_get_person_notes_with_multiple_fields():
     """Test retrieving notes with various content types."""
-    company_id = "test-company-id"
+    person_id = "test-person-id"
     mock_response = {
         "data": [
             {
                 "id": {
                     "record_id": "note-001",
-                    "parent_object": "companies",
-                    "parent_record_id": company_id,
+                    "parent_object": "people",
+                    "parent_record_id": person_id,
                 },
-                "title": "Technical Review",
-                "content_plaintext": "Product architecture is solid. Recommended improvements...",
-                "content_html": "<p>Product architecture is solid. Recommended improvements:</p>",
+                "title": "Strategy Discussion",
+                "content_plaintext": "Talked about growth strategy and market positioning.",
+                "content_html": "<p>Talked about growth strategy and market positioning.</p>",
                 "created_at": "2024-11-10T09:00:00.000000000Z",
                 "created_by": {
                     "type": "workspace-member",
@@ -192,12 +192,12 @@ async def test_get_company_notes_with_multiple_fields():
         mock_resp.raise_for_status.return_value = None
         mock_get.return_value = mock_resp
 
-        result = await client.get_company_notes(company_id=company_id)
+        result = await client.get_person_notes(person_id=person_id)
 
         # Verify comprehensive note data
         note = result["data"][0]
-        assert note["title"] == "Technical Review"
-        assert "improvements" in note["content_plaintext"]
+        assert note["title"] == "Strategy Discussion"
+        assert "growth strategy" in note["content_plaintext"]
         assert "<p>" in note["content_html"]
         assert len(note["mentions"]) == 1
 

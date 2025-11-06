@@ -68,15 +68,16 @@ async def get_company_notes(company_id: str) -> str:
 
 
 @mcp.tool()
-async def search_people(query: str, limit: int = 10) -> str:
-    """Search for people in Attio CRM.
+async def search_people(query: str, email: str | None = None, limit: int = 10) -> str:
+    """Search for people in Attio CRM by name and optionally email.
 
     Args:
-        query: Search query to find people
+        query: Person name to search for
+        email: Optional email for disambiguation (e.g., "john@example.com")
         limit: Maximum number of results to return (default: 10)
     """
     try:
-        result = await attio_client.search_people(query=query, limit=limit)
+        result = await attio_client.search_people(query=query, email=email, limit=limit)
         return json.dumps(result, indent=2)
     except Exception as e:
         logger.error(f"Error searching people: {e}", exc_info=True)
@@ -85,10 +86,10 @@ async def search_people(query: str, limit: int = 10) -> str:
 
 @mcp.tool()
 async def get_person_details(person_id: str) -> str:
-    """Get detailed information about a specific person.
+    """Get detailed information about a specific person by record ID.
 
     Args:
-        person_id: Unique identifier for the person
+        person_id: Unique record_id for the person (from search results or known ID)
     """
     try:
         result = await attio_client.get_person_details(person_id=person_id)
@@ -100,10 +101,10 @@ async def get_person_details(person_id: str) -> str:
 
 @mcp.tool()
 async def get_person_notes(person_id: str) -> str:
-    """Get notes associated with a person.
+    """Get internal notes associated with a person.
 
     Args:
-        person_id: Unique identifier for the person
+        person_id: Unique record_id for the person
     """
     try:
         result = await attio_client.get_person_notes(person_id=person_id)
