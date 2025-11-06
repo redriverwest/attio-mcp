@@ -84,6 +84,7 @@ If not set, the server runs without authentication (useful for development).
    MCP_TRANSPORT=sse
    MCP_HOST=0.0.0.0
    MCP_PORT=8080
+   MCP_MOUNT_PATH=/
    # Optional extras
    MCP_BEARER_TOKEN=your_generated_token
    LOG_LEVEL=INFO
@@ -106,6 +107,7 @@ If not set, the server runs without authentication (useful for development).
    - Optionally `MCP_BEARER_TOKEN`
    - `MCP_TRANSPORT=sse`
    - `MCP_PORT` (match the exposed port, default `8080`)
+   - Optionally `MCP_MOUNT_PATH` if you need to mount the API under a sub-path
 4. Set the desired domain/FQDN in Coolify to match the `coolify.fqdn` label defined in `docker-compose.yml` (or override via `COOLIFY_FQDN`).
 5. Deploy the application. Coolify will handle image builds, networking, and SSL termination. Because the Compose file uses `expose` instead of `ports`, Coolify binds the internal `MCP_PORT` to its reverse proxy and avoids host port collisions.
 

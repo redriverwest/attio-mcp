@@ -24,10 +24,22 @@ if settings.mcp_bearer_token:
         resource_server_url="https://attio-mcp.local",  # Resource server for bearer token auth
         required_scopes=None,
     )
-    mcp = FastMCP("attio-mcp", token_verifier=token_verifier, auth=auth_settings)
+    mcp = FastMCP(
+        "attio-mcp",
+        token_verifier=token_verifier,
+        auth=auth_settings,
+        host=settings.mcp_host,
+        port=settings.mcp_port,
+        log_level=settings.log_level.upper(),
+    )
 else:
     logger.warning("Bearer token not configured - authentication disabled")
-    mcp = FastMCP("attio-mcp")
+    mcp = FastMCP(
+        "attio-mcp",
+        host=settings.mcp_host,
+        port=settings.mcp_port,
+        log_level=settings.log_level.upper(),
+    )
 
 # Initialize Attio client
 attio_client = AttioClient()
@@ -132,15 +144,17 @@ def main() -> None:
     logger.info("Starting Attio MCP server...")
     run_kwargs: dict[str, object] = {"transport": settings.mcp_transport}
 
-    if settings.mcp_transport != "stdio":
-        run_kwargs["host"] = settings.mcp_host
-        run_kwargs["port"] = settings.mcp_port
+    if settings.mcp_transport == "sse":
+        run_kwargs["mount_path"] = settings.mcp_mount_path
         logger.info(
-            "Running with transport=%s on %s:%s",
+            "Running with transport=%s on %s:%s (mount_path=%s)",
             settings.mcp_transport,
             settings.mcp_host,
             settings.mcp_port,
+            settings.mcp_mount_path,
         )
+    else:
+        logger.info("Running with transport=%s", settings.mcp_transport)
 
     mcp.run(**run_kwargs)
 

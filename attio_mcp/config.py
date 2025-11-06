@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     mcp_transport: str = "stdio"
     mcp_host: str = "0.0.0.0"
     mcp_port: int = 8000
+    mcp_mount_path: str = "/"
 
 
 # Global settings instance
