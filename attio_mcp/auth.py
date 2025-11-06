@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class BearerTokenVerifier(TokenVerifier):
     """Simple bearer token verifier using environment variable."""
 
-    def verify_token(self, token: str) -> AccessToken | None:
+    async def verify_token(self, token: str) -> AccessToken | None:
         """
         Verify the bearer token against the configured token.
 
