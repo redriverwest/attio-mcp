@@ -130,7 +130,19 @@ async def get_person_notes(person_id: str) -> str:
 def main() -> None:
     """Run the MCP server."""
     logger.info("Starting Attio MCP server...")
-    mcp.run(transport="stdio")
+    run_kwargs: dict[str, object] = {"transport": settings.mcp_transport}
+
+    if settings.mcp_transport != "stdio":
+        run_kwargs["host"] = settings.mcp_host
+        run_kwargs["port"] = settings.mcp_port
+        logger.info(
+            "Running with transport=%s on %s:%s",
+            settings.mcp_transport,
+            settings.mcp_host,
+            settings.mcp_port,
+        )
+
+    mcp.run(**run_kwargs)
 
 
 if __name__ == "__main__":

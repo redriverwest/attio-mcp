@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  attio-mcp:
+    build:
+      context: /Users/alessadro/Developer/attio-mcp
+    image: attio-mcp:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MCP_TRANSPORT: ${MCP_TRANSPORT:-sse}
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: ${MCP_PORT:-8080}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "${MCP_PORT:-8080}:${MCP_PORT:-8080}"
+    networks:
+      - coolify
+    labels:
+      - "coolify.managed=true"
+      - "coolify.name=attio-mcp"
+      - "coolify.fqdn=${COOLIFY_FQDN:-attio.example.com}"
+      - "coolify.port=${MCP_PORT:-8080}"
+
+networks:
+  coolify:
+    external: true

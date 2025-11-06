@@ -22,6 +22,9 @@ class Settings(BaseSettings):
 
     # Server Configuration
     log_level: str = "INFO"
+    mcp_transport: str = "stdio"
+    mcp_host: str = "0.0.0.0"
+    mcp_port: int = 8000
 
 
 # Global settings instance

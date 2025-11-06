@@ -35,7 +35,7 @@ uv pip install -e .
 After installation, configure your environment:
 
 ```bash
-cp .env.example .env
+cp env.example .env
 ```
 
 Edit `.env` and add your **Attio API key** from [Attio's API settings](https://app.attio.com/settings/api).
@@ -72,3 +72,41 @@ Authorization: Bearer your_secure_token_here
 ```
 
 If not set, the server runs without authentication (useful for development).
+
+## Docker Deployment
+
+### Build and run locally
+
+1. Create a `.env` file with the required variables:
+
+   ```bash
+   ATTIO_API_KEY=your_attio_api_key
+   MCP_TRANSPORT=sse
+   MCP_HOST=0.0.0.0
+   MCP_PORT=8080
+   # Optional extras
+   MCP_BEARER_TOKEN=your_generated_token
+   LOG_LEVEL=INFO
+   ```
+
+2. Build and start the container:
+
+   ```bash
+   docker compose up --build
+   ```
+
+   The MCP server listens on the port specified by `MCP_PORT` (defaults to `8080`). Set `MCP_TRANSPORT=stdio` for local CLI usage or `sse` when exposing over HTTP.
+
+### Deploy with Coolify
+
+1. Create a new project in Coolify (e.g., `attio-mcp`) to keep it isolated from existing services.
+2. Add a Docker Compose application pointing to this repository and select the `docker-compose.yml` file.
+3. Configure environment variables in the Coolify UI:
+   - `ATTIO_API_KEY`
+   - Optionally `MCP_BEARER_TOKEN`
+   - `MCP_TRANSPORT=sse`
+   - `MCP_PORT` (match the exposed port, default `8080`)
+4. Set the desired domain/FQDN in Coolify to match the `coolify.fqdn` label defined in `docker-compose.yml` (or override via `COOLIFY_FQDN`).
+5. Deploy the application. Coolify will handle image builds, networking, and SSL termination.
+
+Adjust resource limits or scaling options within Coolify as needed for your OVH server. Ensure the `coolify` Docker network exists (it is created automatically on first Coolify deployment).
