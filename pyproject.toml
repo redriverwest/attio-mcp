@@ -21,6 +21,9 @@ dev = [
     "mypy>=1.8.0",
 ]
 
+[project.scripts]
+attio-mcp = "attio_mcp.server:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

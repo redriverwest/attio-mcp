@@ -1,114 +1,132 @@
 # Attio MCP Server
 
-MCP server for integrating Attio CRM with AI agents.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
+A high-quality [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for integrating Attio CRM with AI agents. Developed by the tech team of [Red River West](https://redriverwest.com) and [>commit](https://commit.fund/).
 
 ## Features
 
-- 🏢 **Companies**: Search companies, get details, and access notes
-- 👥 **People**: Search people, get details, and access notes
-- 🔒 **Secure**: Bearer token authentication for API access
-- 🐳 **Docker Ready**: Containerized for easy deployment
+- 🏢 **Companies**: Search companies, retrieve detailed record information, and access internal notes.
+- 👥 **People**: Search contacts, get full profiles, and view activity notes.
+- 🔒 **Secure**: Optional Bearer token authentication for deployment in non-trusted environments.
+- 🐳 **Deployment Ready**: Optimized Docker images and support for both Stdio and SSE transports.
 
 ## Prerequisites
 
 - Python 3.10 or higher
-- [UV](https://github.com/astral-sh/uv) package manager
-- Attio API key
+- [UV](https://github.com/astral-sh/uv) package manager (recommended) or pip
+- [Attio API Key](https://app.attio.com/settings/api)
 
-## Installation
+## Quick Start
+
+### Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/redriverwest/attio-mcp.git
 cd attio-mcp
 
-# Create virtual environment
-uv venv
-
-# Activate virtual environment
-source .venv/bin/activate
-
-# Install dependencies
+# Install using uv
 uv pip install -e .
+
+# Or using standard pip
+pip install -e .
 ```
 
-After installation, configure your environment:
+### Configuration
+
+Create a `.env` file from the example:
 
 ```bash
 cp env.example .env
 ```
 
-Edit `.env` and add your **Attio API key** from [Attio's API settings](https://app.attio.com/settings/api).
+Edit `.env` and add your `ATTIO_API_KEY`.
+
+### Running the Server
+
+You can run the server directly using the installed script:
+
+```bash
+# Run with stdio transport (default)
+attio-mcp
+
+# Run with SSE transport
+MCP_TRANSPORT=sse attio-mcp
+```
 
 ## Tools
 
-This MCP server provides the following tools for working with Attio CRM data:
-
-- **search_companies**: Search for companies by name or criteria
-- **get_company_details**: Retrieve detailed information about a specific company
-- **get_company_notes**: Fetch notes and activity history for a company
-- **search_people**: Search for people by name or criteria
-- **get_person_details**: Retrieve detailed information about a specific person
-- **get_person_notes**: Fetch notes and activity history for a person
+| Tool                  | Description                                            |
+| --------------------- | ------------------------------------------------------ |
+| `search_companies`    | Search for companies by name or domain.                |
+| `get_company_details` | Retrieve all attributes for a specific company record. |
+| `get_company_notes`   | Fetch all internal notes linked to a company.          |
+| `search_people`       | Find contacts by name or email address.                |
+| `get_person_details`  | Get comprehensive details for a specific person.       |
+| `get_person_notes`    | Retrieve activity history and notes for a contact.     |
 
 ## Authentication
 
-The server optionally supports bearer token authentication. To enable it, set `MCP_BEARER_TOKEN` in your `.env` file:
+When exposing the server over HTTP (SSE transport), you should enable bearer token authentication:
 
-```bash
-MCP_BEARER_TOKEN=your_secure_token_here
-```
-
-Generate a token with:
-
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-```
-
-When `MCP_BEARER_TOKEN` is set, all requests require the token in the Authorization header:
-
-```bash
-Authorization: Bearer your_secure_token_here
-```
-
-If not set, the server runs without authentication (useful for development).
+1. Generate a secure token:
+   ```bash
+   python -c "import secrets; print(secrets.token_urlsafe(32))"
+   ```
+2. Set `MCP_BEARER_TOKEN` in your `.env`.
+3. Client requests must include `Authorization: Bearer <your_token>`.
 
 ## Docker Deployment
 
-### Build and run locally
+### Local Development
 
-1. Create a `.env` file with the required variables:
+To run the server locally with Docker Compose:
 
-   ```bash
-   ATTIO_API_KEY=your_attio_api_key
-   MCP_TRANSPORT=sse
-   MCP_HOST=0.0.0.0
-   MCP_PORT=8080
-   MCP_MOUNT_PATH=/
-   # Optional extras
-   MCP_BEARER_TOKEN=your_generated_token
-   LOG_LEVEL=INFO
-   ```
+```bash
+docker compose -f deploy/docker-compose.local.yml up --build
+```
 
-2. Build and start the container (the extra override file publishes the port and reads your `.env`):
+This will build and run the server with port mapping to your host (default `8080`).
 
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
-   ```
+### Production Deployment
 
-   The MCP server listens on the port specified by `MCP_PORT` (defaults to `8080`). Set `MCP_TRANSPORT=stdio` for local CLI usage or `sse` when exposing over HTTP.
+For production environments, you can use `deploy/docker-compose.yml` as a base. It is designed to be minimal and transport-agnostic.
 
-### Deploy with Coolify
+#### Deploy with Coolify
 
-1. Create a new project in Coolify (e.g., `attio-mcp`) to keep it isolated from existing services.
-2. Add a Docker Compose application pointing to this repository and select the `docker-compose.yml` file.
-3. Configure environment variables in the Coolify UI (Coolify injects them at runtime, so no `.env` file is required on the server):
-   - `ATTIO_API_KEY`
-   - Optionally `MCP_BEARER_TOKEN`
-   - `MCP_TRANSPORT=sse`
-   - `MCP_PORT` (match the exposed port, default `8080`)
-   - Optionally `MCP_MOUNT_PATH` if you need to mount the API under a sub-path
-4. Set the desired domain/FQDN in Coolify to match the `coolify.fqdn` label defined in `docker-compose.yml` (or override via `COOLIFY_FQDN`).
-5. Deploy the application. Coolify will handle image builds, networking, and SSL termination. Because the Compose file uses `expose` instead of `ports`, Coolify binds the internal `MCP_PORT` to its reverse proxy and avoids host port collisions.
+If you use [Coolify](https://coolify.io), use the provided `deploy/docker-compose.coolify.yml` which includes the necessary labels and network configuration:
 
-Adjust resource limits or scaling options within Coolify as needed for your OVH server. Ensure the `coolify` Docker network exists (it is created automatically on first Coolify deployment).
+1. In Coolify, create a new **Docker Compose** application.
+2. Set the **Docker Compose File** to `deploy/docker-compose.coolify.yml`.
+3. Configure your environment variables in the Coolify UI.
+4. Deploy.
+
+## Development
+
+### Setup
+
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -e ".[dev]"
+```
+
+### Testing
+
+```bash
+pytest
+```
+
+### Linting & Types
+
+```bash
+ruff check .
+black .
+mypy .
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

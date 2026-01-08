@@ -1,0 +1,16 @@
+services:
+  attio-mcp:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: attio-mcp:latest
+    restart: unless-stopped
+    environment:
+      MCP_TRANSPORT: ${MCP_TRANSPORT:-sse}
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: ${MCP_PORT:-8080}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "${MCP_PORT:-8080}:${MCP_PORT:-8080}"
+    env_file:
+      - ../.env
