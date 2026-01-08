@@ -2,7 +2,7 @@ services:
   attio-mcp:
     build:
       context: .
-      dockerfile: deploy/Dockerfile
+      dockerfile: Dockerfile
     image: attio-mcp:latest
     restart: unless-stopped
     environment:
