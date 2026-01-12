@@ -1,14 +1,12 @@
 """Tests for search_companies functionality."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from attio_mcp.attio_client import AttioClient
-
 
 @pytest.mark.asyncio
-async def test_search_companies_by_name_only():
+async def test_search_companies_by_name_only(attio_client, mock_httpx_response):
     """Test searching companies by name only."""
     mock_response = {
         "data": [
@@ -22,15 +20,10 @@ async def test_search_companies_by_name_only():
         ]
     }
 
-    client = AttioClient()
-    with patch.object(client.client, "post") as mock_post:
-        # Create mock response object
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = mock_response
-        mock_resp.raise_for_status.return_value = None
-        mock_post.return_value = mock_resp
+    with patch.object(attio_client.client, "post") as mock_post:
+        mock_post.return_value = mock_httpx_response(json_data=mock_response)
 
-        result = await client.search_companies(query="OpenAI", limit=10)
+        result = await attio_client.search_companies(query="OpenAI", limit=10)
 
         # Verify the correct endpoint was called
         mock_post.assert_called_once()
@@ -46,11 +39,9 @@ async def test_search_companies_by_name_only():
         assert result == mock_response
         assert len(result["data"]) == 1
 
-    await client.close()
-
 
 @pytest.mark.asyncio
-async def test_search_companies_with_domain():
+async def test_search_companies_with_domain(attio_client, mock_httpx_response):
     """Test searching companies with both name and domain for disambiguation."""
     mock_response = {
         "data": [
@@ -64,15 +55,12 @@ async def test_search_companies_with_domain():
         ]
     }
 
-    client = AttioClient()
-    with patch.object(client.client, "post") as mock_post:
-        # Create mock response object
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = mock_response
-        mock_resp.raise_for_status.return_value = None
-        mock_post.return_value = mock_resp
+    with patch.object(attio_client.client, "post") as mock_post:
+        mock_post.return_value = mock_httpx_response(json_data=mock_response)
 
-        result = await client.search_companies(query="Microsoft", domain="microsoft.com", limit=5)
+        result = await attio_client.search_companies(
+            query="Microsoft", domain="microsoft.com", limit=5
+        )
 
         # Verify the correct endpoint was called
         mock_post.assert_called_once()
@@ -88,20 +76,14 @@ async def test_search_companies_with_domain():
         # Verify the result
         assert result == mock_response
 
-    await client.close()
-
 
 @pytest.mark.asyncio
-async def test_search_companies_error_handling():
+async def test_search_companies_error_handling(attio_client, mock_httpx_response):
     """Test error handling when API request fails."""
-    client = AttioClient()
-    with patch.object(client.client, "post") as mock_post:
-        # Create mock response object that raises an error
-        mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = Exception("API error")
-        mock_post.return_value = mock_resp
+    with patch.object(attio_client.client, "post") as mock_post:
+        mock_post.return_value = mock_httpx_response(
+            raise_for_status=Exception("API error")
+        )
 
         with pytest.raises(Exception):
-            await client.search_companies(query="TestCompany")
-
-    await client.close()
+            await attio_client.search_companies(query="TestCompany")

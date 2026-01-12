@@ -30,6 +30,80 @@ class AttioClient:
         """Close the HTTP client."""
         await self.client.aclose()
 
+    def _build_search_payload(
+        self,
+        name_filter: dict[str, Any],
+        optional_filter: dict[str, Any] | None,
+        limit: int,
+    ) -> dict[str, Any]:
+        """
+        Build a search query payload with filters.
+
+        Args:
+            name_filter: The primary name filter (e.g., {"name": {"$contains": "query"}})
+            optional_filter: Optional secondary filter (e.g., domain or email filter)
+            limit: Maximum number of results
+
+        Returns:
+            Payload dictionary ready for the query endpoint
+        """
+        filters = [name_filter]
+        if optional_filter:
+            filters.append(optional_filter)
+
+        payload: dict[str, Any] = {"limit": limit}
+        if len(filters) > 1:
+            payload["filter"] = {"$and": filters}
+        else:
+            payload["filter"] = filters[0]
+
+        return payload
+
+    async def _get_notes(
+        self, parent_object: str, parent_record_id: str, entity_name: str
+    ) -> dict[str, Any]:
+        """
+        Get notes for a parent object (company or person).
+
+        Args:
+            parent_object: The object type ("companies" or "people")
+            parent_record_id: The record ID of the parent
+            entity_name: Human-readable name for logging ("company" or "person")
+
+        Returns:
+            Dictionary containing notes data
+        """
+        logger.info(f"Getting {entity_name} notes for ID: {parent_record_id}")
+
+        try:
+            params = {
+                "parent_object": parent_object,
+                "parent_record_id": parent_record_id,
+            }
+            response = await self.client.get("/notes", params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            logger.info(
+                f"Retrieved {len(data.get('data', []))} notes for {entity_name} {parent_record_id}"
+            )
+            return data
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                logger.warning(f"No notes found for {entity_name}: {parent_record_id}")
+                return {"data": []}
+            logger.error(
+                f"HTTP error getting {entity_name} notes: "
+                f"{e.response.status_code} - {e.response.text}"
+            )
+            raise Exception(
+                f"Attio API error: {e.response.status_code} - {e.response.text}"
+            ) from e
+        except Exception as e:
+            logger.error(f"Error getting {entity_name} notes: {e}", exc_info=True)
+            raise
+
     async def search_companies(
         self, query: str, domain: str | None = None, limit: int = 10
     ) -> dict[str, Any]:
@@ -46,26 +120,9 @@ class AttioClient:
         """
         logger.info(f"Searching companies: query={query}, domain={domain}, limit={limit}")
 
-        # Build filter conditions
-        filters = []
-
-        # Always search by name using $contains for partial matching
-        if query:
-            filters.append({"name": {"$contains": query}})
-
-        # Optionally filter by domain for disambiguation
-        if domain:
-            filters.append({"domains": {"domain": {"$eq": domain}}})
-
-        # Construct the payload
-        payload: dict[str, Any] = {"limit": limit}
-
-        if filters:
-            # Use $and if multiple filters, otherwise use single filter
-            if len(filters) > 1:
-                payload["filter"] = {"$and": filters}
-            else:
-                payload["filter"] = filters[0]
+        name_filter = {"name": {"$contains": query}} if query else {}
+        domain_filter = {"domains": {"domain": {"$eq": domain}}} if domain else None
+        payload = self._build_search_payload(name_filter, domain_filter, limit)
 
         try:
             response = await self.client.post("/objects/companies/records/query", json=payload)
@@ -127,33 +184,7 @@ class AttioClient:
         Returns:
             Dictionary containing notes associated with the company
         """
-        logger.info(f"Getting company notes for ID: {company_id}")
-
-        try:
-            # Query notes endpoint with company as parent object
-            params = {
-                "parent_object": "companies",
-                "parent_record_id": company_id,
-            }
-            response = await self.client.get("/notes", params=params)
-            response.raise_for_status()
-            data = response.json()
-
-            logger.info(f"Retrieved {len(data.get('data', []))} notes for company {company_id}")
-            return data
-
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                logger.warning(f"No notes found for company: {company_id}")
-                # Return empty notes list for 404 (not found is not an error for notes)
-                return {"data": []}
-            logger.error(
-                f"HTTP error getting company notes: {e.response.status_code} - {e.response.text}"
-            )
-            raise Exception(f"Attio API error: {e.response.status_code} - {e.response.text}") from e
-        except Exception as e:
-            logger.error(f"Error getting company notes: {e}", exc_info=True)
-            raise
+        return await self._get_notes("companies", company_id, "company")
 
     async def search_people(
         self, query: str, email: str | None = None, limit: int = 10
@@ -171,26 +202,11 @@ class AttioClient:
         """
         logger.info(f"Searching people: query={query}, email={email}, limit={limit}")
 
-        # Build filter conditions
-        filters = []
-
-        # Always search by name using $contains for partial matching
-        if query:
-            filters.append({"name": {"$contains": query}})
-
-        # Optionally filter by email for disambiguation
-        if email:
-            filters.append({"email_addresses": {"email_address": {"$eq": email}}})
-
-        # Construct the payload
-        payload: dict[str, Any] = {"limit": limit}
-
-        if filters:
-            # Use $and if multiple filters, otherwise use single filter
-            if len(filters) > 1:
-                payload["filter"] = {"$and": filters}
-            else:
-                payload["filter"] = filters[0]
+        name_filter = {"name": {"$contains": query}} if query else {}
+        email_filter = (
+            {"email_addresses": {"email_address": {"$eq": email}}} if email else None
+        )
+        payload = self._build_search_payload(name_filter, email_filter, limit)
 
         try:
             response = await self.client.post("/objects/people/records/query", json=payload)
@@ -251,30 +267,4 @@ class AttioClient:
         Returns:
             Dictionary containing notes associated with the person
         """
-        logger.info(f"Getting person notes for ID: {person_id}")
-
-        try:
-            # Query notes endpoint with person as parent object
-            params = {
-                "parent_object": "people",
-                "parent_record_id": person_id,
-            }
-            response = await self.client.get("/notes", params=params)
-            response.raise_for_status()
-            data = response.json()
-
-            logger.info(f"Retrieved {len(data.get('data', []))} notes for person {person_id}")
-            return data
-
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                logger.warning(f"No notes found for person: {person_id}")
-                # Return empty notes list for 404 (not found is not an error for notes)
-                return {"data": []}
-            logger.error(
-                f"HTTP error getting person notes: {e.response.status_code} - {e.response.text}"
-            )
-            raise Exception(f"Attio API error: {e.response.status_code} - {e.response.text}") from e
-        except Exception as e:
-            logger.error(f"Error getting person notes: {e}", exc_info=True)
-            raise
+        return await self._get_notes("people", person_id, "person")

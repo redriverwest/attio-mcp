@@ -1,14 +1,12 @@
 """Tests for search_people functionality."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from attio_mcp.attio_client import AttioClient
-
 
 @pytest.mark.asyncio
-async def test_search_people_by_name_only():
+async def test_search_people_by_name_only(attio_client, mock_httpx_response):
     """Test searching people by name only."""
     mock_response = {
         "data": [
@@ -22,15 +20,10 @@ async def test_search_people_by_name_only():
         ]
     }
 
-    client = AttioClient()
-    with patch.object(client.client, "post") as mock_post:
-        # Create mock response object
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = mock_response
-        mock_resp.raise_for_status.return_value = None
-        mock_post.return_value = mock_resp
+    with patch.object(attio_client.client, "post") as mock_post:
+        mock_post.return_value = mock_httpx_response(json_data=mock_response)
 
-        result = await client.search_people(query="John", limit=10)
+        result = await attio_client.search_people(query="John", limit=10)
 
         # Verify the correct endpoint was called
         mock_post.assert_called_once()
@@ -46,11 +39,9 @@ async def test_search_people_by_name_only():
         assert result == mock_response
         assert len(result["data"]) == 1
 
-    await client.close()
-
 
 @pytest.mark.asyncio
-async def test_search_people_with_email():
+async def test_search_people_with_email(attio_client, mock_httpx_response):
     """Test searching people with both name and email for disambiguation."""
     mock_response = {
         "data": [
@@ -66,15 +57,10 @@ async def test_search_people_with_email():
         ]
     }
 
-    client = AttioClient()
-    with patch.object(client.client, "post") as mock_post:
-        # Create mock response object
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = mock_response
-        mock_resp.raise_for_status.return_value = None
-        mock_post.return_value = mock_resp
+    with patch.object(attio_client.client, "post") as mock_post:
+        mock_post.return_value = mock_httpx_response(json_data=mock_response)
 
-        result = await client.search_people(
+        result = await attio_client.search_people(
             query="Jane Smith", email="jane.smith@example.com", limit=5
         )
 
@@ -95,20 +81,14 @@ async def test_search_people_with_email():
         # Verify the result
         assert result == mock_response
 
-    await client.close()
-
 
 @pytest.mark.asyncio
-async def test_search_people_error_handling():
+async def test_search_people_error_handling(attio_client, mock_httpx_response):
     """Test error handling when API request fails."""
-    client = AttioClient()
-    with patch.object(client.client, "post") as mock_post:
-        # Create mock response object that raises an error
-        mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = Exception("API error")
-        mock_post.return_value = mock_resp
+    with patch.object(attio_client.client, "post") as mock_post:
+        mock_post.return_value = mock_httpx_response(
+            raise_for_status=Exception("API error")
+        )
 
         with pytest.raises(Exception):
-            await client.search_people(query="TestPerson")
-
-    await client.close()
+            await attio_client.search_people(query="TestPerson")

@@ -1,14 +1,13 @@
 """Tests for get_person_details functionality."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-
-from attio_mcp.attio_client import AttioClient
+from httpx import HTTPStatusError, Request, Response
 
 
 @pytest.mark.asyncio
-async def test_get_person_details_success():
+async def test_get_person_details_success(attio_client, mock_httpx_response):
     """Test successfully retrieving person details."""
     person_id = "person-abc-123"
     mock_response = {
@@ -28,15 +27,10 @@ async def test_get_person_details_success():
         },
     }
 
-    client = AttioClient()
-    with patch.object(client.client, "get") as mock_get:
-        # Create mock response object
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = mock_response
-        mock_resp.raise_for_status.return_value = None
-        mock_get.return_value = mock_resp
+    with patch.object(attio_client.client, "get") as mock_get:
+        mock_get.return_value = mock_httpx_response(json_data=mock_response)
 
-        result = await client.get_person_details(person_id=person_id)
+        result = await attio_client.get_person_details(person_id=person_id)
 
         # Verify the correct endpoint was called
         mock_get.assert_called_once_with(f"/objects/people/records/{person_id}")
@@ -48,65 +42,47 @@ async def test_get_person_details_success():
         assert result["values"]["email_addresses"][0]["email_address"] == "john.doe@example.com"
         assert result["values"]["job_title"][0]["value"] == "CEO"
 
-    await client.close()
-
 
 @pytest.mark.asyncio
-async def test_get_person_details_not_found():
+async def test_get_person_details_not_found(attio_client, mock_httpx_response):
     """Test handling when person is not found (404)."""
     person_id = "non-existent-id"
 
-    client = AttioClient()
-    with patch.object(client.client, "get") as mock_get:
-        # Create mock response that raises 404
-        mock_resp = MagicMock()
-        mock_resp.status_code = 404
-        mock_resp.text = "Person not found"
-
-        from httpx import HTTPStatusError, Request, Response
-
-        mock_get.return_value = mock_resp
-        mock_resp.raise_for_status.side_effect = HTTPStatusError(
+    with patch.object(attio_client.client, "get") as mock_get:
+        error = HTTPStatusError(
             "404 Not Found",
             request=Request("GET", "http://test.com"),
             response=Response(404),
         )
+        mock_get.return_value = mock_httpx_response(
+            status_code=404, raise_for_status=error
+        )
 
         with pytest.raises(Exception, match="Person not found"):
-            await client.get_person_details(person_id=person_id)
-
-    await client.close()
+            await attio_client.get_person_details(person_id=person_id)
 
 
 @pytest.mark.asyncio
-async def test_get_person_details_api_error():
+async def test_get_person_details_api_error(attio_client, mock_httpx_response):
     """Test handling API errors (non-404)."""
     person_id = "test-person-id"
 
-    client = AttioClient()
-    with patch.object(client.client, "get") as mock_get:
-        # Create mock response that raises 500
-        mock_resp = MagicMock()
-        mock_resp.status_code = 500
-        mock_resp.text = "Internal Server Error"
-
-        from httpx import HTTPStatusError, Request, Response
-
-        mock_get.return_value = mock_resp
-        mock_resp.raise_for_status.side_effect = HTTPStatusError(
+    with patch.object(attio_client.client, "get") as mock_get:
+        error = HTTPStatusError(
             "500 Internal Server Error",
             request=Request("GET", "http://test.com"),
             response=Response(500),
         )
+        mock_get.return_value = mock_httpx_response(
+            status_code=500, raise_for_status=error
+        )
 
         with pytest.raises(Exception, match="Attio API error"):
-            await client.get_person_details(person_id=person_id)
-
-    await client.close()
+            await attio_client.get_person_details(person_id=person_id)
 
 
 @pytest.mark.asyncio
-async def test_get_person_details_with_full_record():
+async def test_get_person_details_with_full_record(attio_client, mock_httpx_response):
     """Test retrieving a person with a comprehensive record structure."""
     person_id = "test-full-record-id"
     mock_response = {
@@ -141,19 +117,13 @@ async def test_get_person_details_with_full_record():
         },
     }
 
-    client = AttioClient()
-    with patch.object(client.client, "get") as mock_get:
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = mock_response
-        mock_resp.raise_for_status.return_value = None
-        mock_get.return_value = mock_resp
+    with patch.object(attio_client.client, "get") as mock_get:
+        mock_get.return_value = mock_httpx_response(json_data=mock_response)
 
-        result = await client.get_person_details(person_id=person_id)
+        result = await attio_client.get_person_details(person_id=person_id)
 
         # Verify comprehensive data is returned
         assert result["values"]["name"][0]["full_name"] == "Jane Smith"
         assert result["values"]["job_title"][0]["value"] == "CTO"
         assert result["values"]["primary_location"][0]["locality"] == "San Francisco"
         assert result["values"]["linkedin"][0]["value"] == "https://linkedin.com/in/janesmith"
-
-    await client.close()

@@ -1,14 +1,13 @@
 """Tests for get_person_notes functionality."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-
-from attio_mcp.attio_client import AttioClient
+from httpx import HTTPStatusError, Request, Response
 
 
 @pytest.mark.asyncio
-async def test_get_person_notes_success():
+async def test_get_person_notes_success(attio_client, mock_httpx_response):
     """Test successfully retrieving person notes."""
     person_id = "person-abc-123"
     mock_response = {
@@ -50,15 +49,10 @@ async def test_get_person_notes_success():
         ]
     }
 
-    client = AttioClient()
-    with patch.object(client.client, "get") as mock_get:
-        # Create mock response object
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = mock_response
-        mock_resp.raise_for_status.return_value = None
-        mock_get.return_value = mock_resp
+    with patch.object(attio_client.client, "get") as mock_get:
+        mock_get.return_value = mock_httpx_response(json_data=mock_response)
 
-        result = await client.get_person_notes(person_id=person_id)
+        result = await attio_client.get_person_notes(person_id=person_id)
 
         # Verify the correct endpoint was called
         mock_get.assert_called_once()
@@ -76,90 +70,65 @@ async def test_get_person_notes_success():
         assert result["data"][0]["title"] == "Initial Meeting"
         assert result["data"][1]["title"] == "Follow-up Call"
 
-    await client.close()
-
 
 @pytest.mark.asyncio
-async def test_get_person_notes_empty():
+async def test_get_person_notes_empty(attio_client, mock_httpx_response):
     """Test retrieving person with no notes."""
     person_id = "test-person-id"
     mock_response = {"data": []}
 
-    client = AttioClient()
-    with patch.object(client.client, "get") as mock_get:
-        # Create mock response object
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = mock_response
-        mock_resp.raise_for_status.return_value = None
-        mock_get.return_value = mock_resp
+    with patch.object(attio_client.client, "get") as mock_get:
+        mock_get.return_value = mock_httpx_response(json_data=mock_response)
 
-        result = await client.get_person_notes(person_id=person_id)
+        result = await attio_client.get_person_notes(person_id=person_id)
 
         # Verify the result
         assert result == mock_response
         assert len(result["data"]) == 0
 
-    await client.close()
-
 
 @pytest.mark.asyncio
-async def test_get_person_notes_not_found():
+async def test_get_person_notes_not_found(attio_client, mock_httpx_response):
     """Test handling when person is not found (404) - should return empty list."""
     person_id = "non-existent-id"
 
-    client = AttioClient()
-    with patch.object(client.client, "get") as mock_get:
-        # Create mock response that raises 404
-        mock_resp = MagicMock()
-        mock_resp.status_code = 404
-        mock_resp.text = "Not Found"
-
-        from httpx import HTTPStatusError, Request, Response
-
-        mock_get.return_value = mock_resp
-        mock_resp.raise_for_status.side_effect = HTTPStatusError(
+    with patch.object(attio_client.client, "get") as mock_get:
+        error = HTTPStatusError(
             "404 Not Found",
             request=Request("GET", "http://test.com"),
             response=Response(404),
         )
+        mock_get.return_value = mock_httpx_response(
+            status_code=404, raise_for_status=error
+        )
 
-        result = await client.get_person_notes(person_id=person_id)
+        result = await attio_client.get_person_notes(person_id=person_id)
 
         # For notes, 404 should return empty list, not raise an error
         assert result == {"data": []}
 
-    await client.close()
-
 
 @pytest.mark.asyncio
-async def test_get_person_notes_api_error():
+async def test_get_person_notes_api_error(attio_client, mock_httpx_response):
     """Test handling API errors (non-404)."""
     person_id = "test-person-id"
 
-    client = AttioClient()
-    with patch.object(client.client, "get") as mock_get:
-        # Create mock response that raises 500
-        mock_resp = MagicMock()
-        mock_resp.status_code = 500
-        mock_resp.text = "Internal Server Error"
-
-        from httpx import HTTPStatusError, Request, Response
-
-        mock_get.return_value = mock_resp
-        mock_resp.raise_for_status.side_effect = HTTPStatusError(
+    with patch.object(attio_client.client, "get") as mock_get:
+        error = HTTPStatusError(
             "500 Internal Server Error",
             request=Request("GET", "http://test.com"),
             response=Response(500),
         )
+        mock_get.return_value = mock_httpx_response(
+            status_code=500, raise_for_status=error
+        )
 
         with pytest.raises(Exception, match="Attio API error"):
-            await client.get_person_notes(person_id=person_id)
-
-    await client.close()
+            await attio_client.get_person_notes(person_id=person_id)
 
 
 @pytest.mark.asyncio
-async def test_get_person_notes_with_multiple_fields():
+async def test_get_person_notes_with_multiple_fields(attio_client, mock_httpx_response):
     """Test retrieving notes with various content types."""
     person_id = "test-person-id"
     mock_response = {
@@ -185,14 +154,10 @@ async def test_get_person_notes_with_multiple_fields():
         ]
     }
 
-    client = AttioClient()
-    with patch.object(client.client, "get") as mock_get:
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = mock_response
-        mock_resp.raise_for_status.return_value = None
-        mock_get.return_value = mock_resp
+    with patch.object(attio_client.client, "get") as mock_get:
+        mock_get.return_value = mock_httpx_response(json_data=mock_response)
 
-        result = await client.get_person_notes(person_id=person_id)
+        result = await attio_client.get_person_notes(person_id=person_id)
 
         # Verify comprehensive note data
         note = result["data"][0]
@@ -200,5 +165,3 @@ async def test_get_person_notes_with_multiple_fields():
         assert "growth strategy" in note["content_plaintext"]
         assert "<p>" in note["content_html"]
         assert len(note["mentions"]) == 1
-
-    await client.close()
