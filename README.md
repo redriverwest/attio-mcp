@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-A high-quality [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for integrating Attio CRM with AI agents. Developed by the tech team of [Red River West](https://redriverwest.com) and [>commit](https://commit.fund/).
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for integrating Attio CRM with AI agents. Developed by the tech team of [Red River West](https://redriverwest.com) and [>commit](https://commit.fund/).
 
 ## Features
 
