@@ -16,7 +16,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for int
 
 - Python 3.10 or higher
 - [UV](https://github.com/astral-sh/uv) package manager (recommended) or pip
-- [Attio API Key](https://app.attio.com/settings/api)
+- Attio API Key
 
 ## Quick Start
 
@@ -39,7 +39,7 @@ pip install -e .
 Create a `.env` file from the example:
 
 ```bash
-cp env.example .env
+cp .env.example .env
 ```
 
 Edit `.env` and add your `ATTIO_API_KEY`.
@@ -93,15 +93,6 @@ This will build and run the server with port mapping to your host (default `8080
 ### Production Deployment
 
 For production environments, you can use `deploy/docker-compose.yml` as a base. It is designed to be minimal and transport-agnostic.
-
-#### Deploy with Coolify
-
-If you use [Coolify](https://coolify.io), use the provided `deploy/docker-compose.coolify.yml` which includes the necessary labels and network configuration:
-
-1. In Coolify, create a new **Docker Compose** application.
-2. Set the **Docker Compose File** to `deploy/docker-compose.coolify.yml`.
-3. Configure your environment variables in the Coolify UI.
-4. Deploy.
 
 ## Development
 
