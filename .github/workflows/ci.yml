@@ -28,7 +28,13 @@ jobs:
       - name: Run linting
         run: uv run ruff check .
 
-      - name: Run tests
+      - name: Run tests (auth disabled)
         run: uv run pytest
         env:
           ATTIO_API_KEY: test-key-for-ci
+
+      - name: Run tests (auth enabled)
+        run: uv run pytest
+        env:
+          ATTIO_API_KEY: test-key-for-ci
+          MCP_BEARER_TOKEN: test-token-for-ci
