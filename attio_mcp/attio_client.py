@@ -1,7 +1,7 @@
 """Attio API client for interacting with Attio CRM."""
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -82,7 +82,7 @@ class AttioClient:
             }
             response = await self.client.get("/notes", params=params)
             response.raise_for_status()
-            data = response.json()
+            data = cast(dict[str, Any], response.json())
 
             logger.info(
                 f"Retrieved {len(data.get('data', []))} notes for {entity_name} {parent_record_id}"
@@ -127,7 +127,7 @@ class AttioClient:
         try:
             response = await self.client.post("/objects/companies/records/query", json=payload)
             response.raise_for_status()
-            data = response.json()
+            data = cast(dict[str, Any], response.json())
 
             logger.info(f"Found {len(data.get('data', []))} companies for query '{query}'")
             return data
@@ -157,7 +157,7 @@ class AttioClient:
         try:
             response = await self.client.get(f"/objects/companies/records/{company_id}")
             response.raise_for_status()
-            data = response.json()
+            data = cast(dict[str, Any], response.json())
 
             logger.info(f"Successfully retrieved company details for ID: {company_id}")
             return data
@@ -211,7 +211,7 @@ class AttioClient:
         try:
             response = await self.client.post("/objects/people/records/query", json=payload)
             response.raise_for_status()
-            data = response.json()
+            data = cast(dict[str, Any], response.json())
 
             logger.info(f"Found {len(data.get('data', []))} people for query '{query}'")
             return data
@@ -240,7 +240,7 @@ class AttioClient:
         try:
             response = await self.client.get(f"/objects/people/records/{person_id}")
             response.raise_for_status()
-            data = response.json()
+            data = cast(dict[str, Any], response.json())
 
             logger.info(f"Successfully retrieved person details for ID: {person_id}")
             return data

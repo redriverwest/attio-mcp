@@ -1,8 +1,10 @@
 import json
 import logging
+from typing import Literal, cast
 
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
+from pydantic import AnyHttpUrl
 
 from attio_mcp.attio_client import AttioClient
 from attio_mcp.auth import BearerTokenVerifier
@@ -15,13 +17,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Type alias for log level
+LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
 # Initialize authentication if token is configured
 if settings.mcp_bearer_token:
     logger.info("Bearer token authentication enabled")
     token_verifier = BearerTokenVerifier()
     auth_settings = AuthSettings(
-        issuer_url="https://attio-mcp.local",  # Local issuer for bearer token auth
-        resource_server_url="https://attio-mcp.local",  # Resource server for bearer token auth
+        issuer_url=cast(AnyHttpUrl, "https://attio-mcp.local"),
+        resource_server_url=cast(AnyHttpUrl, "https://attio-mcp.local"),
         required_scopes=None,
     )
     mcp = FastMCP(
@@ -30,7 +35,7 @@ if settings.mcp_bearer_token:
         auth=auth_settings,
         host=settings.mcp_host,
         port=settings.mcp_port,
-        log_level=settings.log_level.upper(),
+        log_level=cast(LogLevel, settings.log_level.upper()),
     )
 else:
     logger.warning("Bearer token not configured - authentication disabled")
@@ -38,7 +43,7 @@ else:
         "attio-mcp",
         host=settings.mcp_host,
         port=settings.mcp_port,
-        log_level=settings.log_level.upper(),
+        log_level=cast(LogLevel, settings.log_level.upper()),
     )
 
 # Initialize Attio client
@@ -142,10 +147,8 @@ async def get_person_notes(person_id: str) -> str:
 def main() -> None:
     """Run the MCP server."""
     logger.info("Starting Attio MCP server...")
-    run_kwargs: dict[str, object] = {"transport": settings.mcp_transport}
 
     if settings.mcp_transport == "sse":
-        run_kwargs["mount_path"] = settings.mcp_mount_path
         logger.info(
             "Running with transport=%s on %s:%s (mount_path=%s)",
             settings.mcp_transport,
@@ -153,10 +156,10 @@ def main() -> None:
             settings.mcp_port,
             settings.mcp_mount_path,
         )
+        mcp.run(transport="sse", mount_path=settings.mcp_mount_path)
     else:
         logger.info("Running with transport=%s", settings.mcp_transport)
-
-    mcp.run(**run_kwargs)
+        mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":

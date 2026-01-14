@@ -28,6 +28,9 @@ jobs:
       - name: Run linting
         run: uv run ruff check .
 
+      - name: Run type checking
+        run: uv run mypy attio_mcp/
+
       - name: Run tests (auth disabled)
         run: uv run pytest
         env:
