@@ -55,3 +55,4 @@ Thumbs.db
 # Docker
 *.log
 
+.mcp.json
