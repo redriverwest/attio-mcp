@@ -102,6 +102,17 @@ For production environments, you can use `deploy/docker-compose.yml` as a base. 
 uv venv
 source .venv/bin/activate
 uv pip install -e ".[dev]"
+pre-commit install
+```
+
+### Pre-commit Hooks
+
+This project uses [pre-commit](https://pre-commit.com/) to run linting, formatting, and type checks automatically before each commit. The hooks are installed during setup with `pre-commit install`.
+
+To run all checks manually:
+
+```bash
+pre-commit run --all-files
 ```
 
 ### Testing
@@ -115,7 +126,7 @@ pytest
 ```bash
 ruff check .
 black .
-mypy .
+mypy attio_mcp/
 ```
 
 ## License
