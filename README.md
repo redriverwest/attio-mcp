@@ -58,14 +58,16 @@ MCP_TRANSPORT=sse attio-mcp
 
 ## Tools
 
-| Tool                  | Description                                            |
-| --------------------- | ------------------------------------------------------ |
-| `search_companies`    | Search for companies by name or domain.                |
-| `get_company_details` | Retrieve all attributes for a specific company record. |
-| `get_company_notes`   | Fetch all internal notes linked to a company.          |
-| `search_people`       | Find contacts by name or email address.                |
-| `get_person_details`  | Get comprehensive details for a specific person.       |
-| `get_person_notes`    | Retrieve activity history and notes for a contact.     |
+| Tool                             | Description                                            |
+| -------------------------------- | ------------------------------------------------------ |
+| `search_companies`               | Search for companies by name or domain.                |
+| `get_company_details`            | Retrieve all attributes for a specific company record. |
+| `get_company_notes`              | Fetch all internal notes linked to a company.          |
+| `search_people`                  | Find contacts by name or email address.                |
+| `get_person_details`             | Get comprehensive details for a specific person.       |
+| `get_person_notes`               | Retrieve activity history and notes for a contact.     |
+| `get_workspace_member`           | Get workspace member details (name, email) from ID.    |
+| `search_workspace_member_by_email` | Find a workspace member by their email address.      |
 
 ## Authentication
 
