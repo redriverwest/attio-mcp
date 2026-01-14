@@ -144,6 +144,21 @@ async def get_person_notes(person_id: str) -> str:
         return f"Error: {str(e)}"
 
 
+@mcp.tool()
+async def get_workspace_member(member_id: str) -> str:
+    """Get detailed information about a workspace member.
+
+    Args:
+        member_id: Unique workspace_member_id (found in owner fields, interaction owner_actor, etc.)
+    """
+    try:
+        result = await attio_client.get_workspace_member(member_id=member_id)
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        logger.error(f"Error getting workspace member: {e}", exc_info=True)
+        return f"Error: {str(e)}"
+
+
 def main() -> None:
     """Run the MCP server."""
     logger.info("Starting Attio MCP server...")

@@ -264,3 +264,37 @@ class AttioClient:
             Dictionary containing notes associated with the person
         """
         return await self._get_notes("people", person_id, "person")
+
+    async def get_workspace_member(self, member_id: str) -> dict[str, Any]:
+        """
+        Get detailed information about a workspace member.
+
+        Args:
+            member_id: Unique workspace_member_id (found in owner fields,
+                interaction owner_actor, etc.)
+
+        Returns:
+            Dictionary containing workspace member details including:
+            first_name, last_name, email_address, avatar_url, access_level
+        """
+        logger.info(f"Getting workspace member details for ID: {member_id}")
+
+        try:
+            response = await self.client.get(f"/workspace_members/{member_id}")
+            response.raise_for_status()
+            data = cast(dict[str, Any], response.json())
+
+            logger.info(f"Successfully retrieved workspace member details for ID: {member_id}")
+            return data
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                logger.error(f"Workspace member not found with ID: {member_id}")
+                raise Exception(f"Workspace member not found: {member_id}") from e
+            logger.error(
+                f"HTTP error getting workspace member: {e.response.status_code} - {e.response.text}"
+            )
+            raise Exception(f"Attio API error: {e.response.status_code} - {e.response.text}") from e
+        except Exception as e:
+            logger.error(f"Error getting workspace member: {e}", exc_info=True)
+            raise
