@@ -81,9 +81,7 @@ async def test_search_companies_with_domain(attio_client, mock_httpx_response):
 async def test_search_companies_error_handling(attio_client, mock_httpx_response):
     """Test error handling when API request fails."""
     with patch.object(attio_client.client, "post") as mock_post:
-        mock_post.return_value = mock_httpx_response(
-            raise_for_status=Exception("API error")
-        )
+        mock_post.return_value = mock_httpx_response(raise_for_status=Exception("API error"))
 
         with pytest.raises(Exception):
             await attio_client.search_companies(query="TestCompany")

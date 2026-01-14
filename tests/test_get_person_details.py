@@ -54,9 +54,7 @@ async def test_get_person_details_not_found(attio_client, mock_httpx_response):
             request=Request("GET", "http://test.com"),
             response=Response(404),
         )
-        mock_get.return_value = mock_httpx_response(
-            status_code=404, raise_for_status=error
-        )
+        mock_get.return_value = mock_httpx_response(status_code=404, raise_for_status=error)
 
         with pytest.raises(Exception, match="Person not found"):
             await attio_client.get_person_details(person_id=person_id)
@@ -73,9 +71,7 @@ async def test_get_person_details_api_error(attio_client, mock_httpx_response):
             request=Request("GET", "http://test.com"),
             response=Response(500),
         )
-        mock_get.return_value = mock_httpx_response(
-            status_code=500, raise_for_status=error
-        )
+        mock_get.return_value = mock_httpx_response(status_code=500, raise_for_status=error)
 
         with pytest.raises(Exception, match="Attio API error"):
             await attio_client.get_person_details(person_id=person_id)

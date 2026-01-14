@@ -97,9 +97,7 @@ class AttioClient:
                 f"HTTP error getting {entity_name} notes: "
                 f"{e.response.status_code} - {e.response.text}"
             )
-            raise Exception(
-                f"Attio API error: {e.response.status_code} - {e.response.text}"
-            ) from e
+            raise Exception(f"Attio API error: {e.response.status_code} - {e.response.text}") from e
         except Exception as e:
             logger.error(f"Error getting {entity_name} notes: {e}", exc_info=True)
             raise
@@ -203,9 +201,7 @@ class AttioClient:
         logger.info(f"Searching people: query={query}, email={email}, limit={limit}")
 
         name_filter = {"name": {"$contains": query}} if query else {}
-        email_filter = (
-            {"email_addresses": {"email_address": {"$eq": email}}} if email else None
-        )
+        email_filter = {"email_addresses": {"email_address": {"$eq": email}}} if email else None
         payload = self._build_search_payload(name_filter, email_filter, limit)
 
         try:
