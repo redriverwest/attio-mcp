@@ -19,9 +19,9 @@ async def test_get_workspace_member_success(attio_client, mock_httpx_response):
             "first_name": "John",
             "last_name": "Doe",
             "email_address": "john.doe@example.com",
-            "avatar_url": "https://example.com/avatar.jpg",
+            "avatar_url": "https://lh3.googleusercontent.com/a-/example123",
             "access_level": "admin",
-            "created_at": "2023-01-15T10:30:00.000Z",
+            "created_at": "2023-01-15T10:30:00.000000000Z",
         }
     }
 
@@ -77,11 +77,11 @@ async def test_get_workspace_member_api_error(attio_client, mock_httpx_response)
 @pytest.mark.asyncio
 async def test_get_workspace_member_with_null_fields(attio_client, mock_httpx_response):
     """Test handling response with null/optional fields."""
-    member_id = "minimal-member-id"
+    member_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
     mock_response = {
         "data": {
             "id": {
-                "workspace_id": "workspace-789",
+                "workspace_id": "9135ef71-5324-4eca-a119-a42604411555",
                 "workspace_member_id": member_id,
             },
             "first_name": "Alex",
@@ -89,7 +89,7 @@ async def test_get_workspace_member_with_null_fields(attio_client, mock_httpx_re
             "email_address": "alex@example.com",
             "avatar_url": None,
             "access_level": "member",
-            "created_at": "2025-01-01T00:00:00.000Z",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
         }
     }
 

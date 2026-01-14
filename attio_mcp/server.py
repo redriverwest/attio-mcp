@@ -159,6 +159,25 @@ async def get_workspace_member(member_id: str) -> str:
         return f"Error: {str(e)}"
 
 
+@mcp.tool()
+async def search_workspace_member_by_email(email: str) -> str:
+    """Find a workspace member by their email address.
+
+    Args:
+        email: Email address to search for
+    """
+    try:
+        result = await attio_client.list_workspace_members()
+        members = result.get("data", [])
+        for member in members:
+            if member.get("email_address", "").lower() == email.lower():
+                return json.dumps({"data": member}, indent=2)
+        return json.dumps({"error": f"No workspace member found with email: {email}"})
+    except Exception as e:
+        logger.error(f"Error searching workspace member by email: {e}", exc_info=True)
+        return f"Error: {str(e)}"
+
+
 def main() -> None:
     """Run the MCP server."""
     logger.info("Starting Attio MCP server...")

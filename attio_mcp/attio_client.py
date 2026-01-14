@@ -298,3 +298,30 @@ class AttioClient:
         except Exception as e:
             logger.error(f"Error getting workspace member: {e}", exc_info=True)
             raise
+
+    async def list_workspace_members(self) -> dict[str, Any]:
+        """
+        List all workspace members.
+
+        Returns:
+            Dictionary containing array of workspace member objects
+        """
+        logger.info("Listing all workspace members")
+
+        try:
+            response = await self.client.get("/workspace_members")
+            response.raise_for_status()
+            data = cast(dict[str, Any], response.json())
+
+            logger.info(f"Retrieved {len(data.get('data', []))} workspace members")
+            return data
+
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                f"HTTP error listing workspace members: "
+                f"{e.response.status_code} - {e.response.text}"
+            )
+            raise Exception(f"Attio API error: {e.response.status_code} - {e.response.text}") from e
+        except Exception as e:
+            logger.error(f"Error listing workspace members: {e}", exc_info=True)
+            raise
