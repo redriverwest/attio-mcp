@@ -1,6 +1,7 @@
 """Attio API client for interacting with Attio CRM."""
 
 import logging
+from datetime import date
 from typing import Any, cast
 
 import httpx
@@ -32,30 +33,27 @@ class AttioClient:
 
     def _build_search_payload(
         self,
-        name_filter: dict[str, Any],
-        optional_filter: dict[str, Any] | None,
+        filters: list[dict[str, Any] | None],
         limit: int,
     ) -> dict[str, Any]:
         """
         Build a search query payload with filters.
 
         Args:
-            name_filter: The primary name filter (e.g., {"name": {"$contains": "query"}})
-            optional_filter: Optional secondary filter (e.g., domain or email filter)
+            filters: A list of optional filter objects. Any `None` values are ignored.
             limit: Maximum number of results
 
         Returns:
             Payload dictionary ready for the query endpoint
         """
-        filters = [name_filter]
-        if optional_filter:
-            filters.append(optional_filter)
+        active_filters = [f for f in filters if f]
 
         payload: dict[str, Any] = {"limit": limit}
-        if len(filters) > 1:
-            payload["filter"] = {"$and": filters}
-        else:
-            payload["filter"] = filters[0]
+        if active_filters:
+            if len(active_filters) > 1:
+                payload["filter"] = {"$and": active_filters}
+            else:
+                payload["filter"] = active_filters[0]
 
         return payload
 
@@ -103,31 +101,82 @@ class AttioClient:
             raise
 
     async def search_companies(
-        self, query: str, domain: str | None = None, limit: int = 10
+        self,
+        name: str | None = None,
+        domain: str | None = None,
+        owner_id: str | None = None,
+        reminder_start: str | None = None,
+        reminder_end: str | None = None,
+        limit: int = 15,
     ) -> dict[str, Any]:
         """
         Search for companies in Attio by name and optionally domain.
 
         Args:
-            query: Company name to search for
+            name: Optional company name substring to search for
             domain: Optional domain name for disambiguation (e.g., "openai.com")
+            owner_id: Optional workspace member ID to filter by company owner
+            reminder_start: Optional start date (inclusive) for filtering by reminder (YYYY-MM-DD)
+            reminder_end: Optional end date (inclusive) for filtering by reminder (YYYY-MM-DD)
             limit: Maximum number of results to return
 
         Returns:
             Dictionary containing search results with company records
         """
-        logger.info(f"Searching companies: query={query}, domain={domain}, limit={limit}")
+        reminder_start_date: date | None = None
+        if reminder_start is not None:
+            reminder_start_date = date.fromisoformat(reminder_start)
 
-        name_filter = {"name": {"$contains": query}} if query else {}
+        reminder_end_date: date | None = None
+        if reminder_end is not None:
+            reminder_end_date = date.fromisoformat(reminder_end)
+
+        if (
+            reminder_start_date is not None
+            and reminder_end_date is not None
+            and reminder_start_date > reminder_end_date
+        ):
+            raise ValueError("reminder_start must be <= reminder_end")
+
+        logger.info(
+            "Searching companies: name=%s, domain=%s, owner_id=%s, limit=%s",
+            name,
+            domain,
+            owner_id,
+            limit,
+        )
+
+        name_filter = {"name": {"$contains": name}} if name else None
         domain_filter = {"domains": {"domain": {"$eq": domain}}} if domain else None
-        payload = self._build_search_payload(name_filter, domain_filter, limit)
+        owner_filter = (
+            {
+                "owner": {
+                    "referenced_actor_type": "workspace-member",
+                    "referenced_actor_id": owner_id,
+                }
+            }
+            if owner_id
+            else None
+        )
+        reminder_filter: dict[str, Any] | None = None
+        if reminder_start_date is not None or reminder_end_date is not None:
+            reminder_value_filter: dict[str, Any] = {}
+            if reminder_start_date is not None:
+                reminder_value_filter["$gte"] = reminder_start_date.isoformat()
+            if reminder_end_date is not None:
+                reminder_value_filter["$lte"] = reminder_end_date.isoformat()
+            reminder_filter = {"reminder": reminder_value_filter}
+
+        payload = self._build_search_payload(
+            [name_filter, domain_filter, owner_filter, reminder_filter], limit
+        )
 
         try:
             response = await self.client.post("/objects/companies/records/query", json=payload)
             response.raise_for_status()
             data = cast(dict[str, Any], response.json())
 
-            logger.info(f"Found {len(data.get('data', []))} companies for query '{query}'")
+            logger.info("Found %s companies for name '%s'", len(data.get("data", [])), name)
             return data
 
         except httpx.HTTPStatusError as e:
@@ -200,9 +249,9 @@ class AttioClient:
         """
         logger.info(f"Searching people: query={query}, email={email}, limit={limit}")
 
-        name_filter = {"name": {"$contains": query}} if query else {}
+        name_filter = {"name": {"$contains": query}} if query else None
         email_filter = {"email_addresses": {"email_address": {"$eq": email}}} if email else None
-        payload = self._build_search_payload(name_filter, email_filter, limit)
+        payload = self._build_search_payload([name_filter, email_filter], limit)
 
         try:
             response = await self.client.post("/objects/people/records/query", json=payload)

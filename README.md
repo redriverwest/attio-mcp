@@ -60,7 +60,7 @@ MCP_TRANSPORT=sse attio-mcp
 
 | Tool                             | Description                                            |
 | -------------------------------- | ------------------------------------------------------ |
-| `search_companies`               | Search for companies by name or domain.                |
+| `search_companies`               | Search for companies by name, domain, and/or owner.    |
 | `get_company_details`            | Retrieve all attributes for a specific company record. |
 | `get_company_notes`              | Fetch all internal notes linked to a company.          |
 | `search_people`                  | Find contacts by name or email address.                |
@@ -68,6 +68,15 @@ MCP_TRANSPORT=sse attio-mcp
 | `get_person_notes`               | Retrieve activity history and notes for a contact.     |
 | `get_workspace_member`           | Get workspace member details (name, email) from ID.    |
 | `search_workspace_member_by_email` | Find a workspace member by their email address.      |
+
+### `search_companies` parameters
+
+- `name` (optional): Company name substring to search for.
+- `domain` (optional): Domain name for disambiguation (e.g., `openai.com`).
+- `owner_id` (optional): Workspace member ID to filter by company owner. Use `search_workspace_member_by_email` to look up a member ID.
+- `reminder_start` (optional): Filter companies whose `reminder` is on/after this date (`YYYY-MM-DD`).
+- `reminder_end` (optional): Filter companies whose `reminder` is on/before this date (`YYYY-MM-DD`).
+- `limit` (optional): Max results to return (default `15`).
 
 ## Authentication
 

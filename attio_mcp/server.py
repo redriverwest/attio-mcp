@@ -51,16 +51,33 @@ attio_client = AttioClient()
 
 
 @mcp.tool()
-async def search_companies(query: str, domain: str | None = None, limit: int = 10) -> str:
-    """Search for companies in Attio CRM by name and optionally domain.
+async def search_companies(
+    name: str | None = None,
+    domain: str | None = None,
+    limit: int = 15,
+    owner_id: str | None = None,
+    reminder_start: str | None = None,
+    reminder_end: str | None = None,
+) -> str:
+    """Search for companies in Attio CRM by name, domain, and/or owner.
 
     Args:
-        query: Company name to search for
+        name: Optional company name substring to search for
         domain: Optional domain name for disambiguation (e.g., "openai.com")
-        limit: Maximum number of results to return (default: 10)
+        owner_id: Optional workspace member ID to filter by company owner
+        reminder_start: Optional reminder start date (inclusive), format YYYY-MM-DD
+        reminder_end: Optional reminder end date (inclusive), format YYYY-MM-DD
+        limit: Maximum number of results to return (default: 15)
     """
     try:
-        result = await attio_client.search_companies(query=query, domain=domain, limit=limit)
+        result = await attio_client.search_companies(
+            name=name,
+            domain=domain,
+            owner_id=owner_id,
+            reminder_start=reminder_start,
+            reminder_end=reminder_end,
+            limit=limit,
+        )
         return json.dumps(result, indent=2)
     except Exception as e:
         logger.error(f"Error searching companies: {e}", exc_info=True)
