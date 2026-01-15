@@ -195,6 +195,48 @@ async def search_workspace_member_by_email(email: str) -> str:
         return f"Error: {str(e)}"
 
 
+@mcp.tool()
+async def list_workspace_members(limit: int = 100, contains: str | None = None) -> str:
+    """List workspace members, optionally filtered by a substring match.
+
+    Args:
+        limit: Maximum number of members to return (default: 100)
+        contains: Optional substring filter applied to full name and email address
+    """
+    try:
+        result = await attio_client.list_workspace_members()
+        members = result.get("data", [])
+
+        if contains:
+            needle = contains.lower()
+
+            def matches(member: dict[str, object]) -> bool:
+                first = str(member.get("first_name", "")).strip()
+                last = str(member.get("last_name", "")).strip()
+                email = str(member.get("email_address", "")).strip()
+                full_name = f"{first} {last}".strip()
+                return (
+                    needle in first.lower()
+                    or needle in last.lower()
+                    or needle in full_name.lower()
+                    or needle in email.lower()
+                )
+
+            members = [m for m in members if matches(m)]
+
+        try:
+            limit_int = int(limit)
+        except (TypeError, ValueError) as e:
+            raise ValueError("limit must be an integer") from e
+        if limit_int < 0:
+            raise ValueError("limit must be >= 0")
+
+        return json.dumps({"data": members[:limit_int]}, indent=2)
+    except Exception as e:
+        logger.error(f"Error listing workspace members: {e}", exc_info=True)
+        return f"Error: {str(e)}"
+
+
 def main() -> None:
     """Run the MCP server."""
     logger.info("Starting Attio MCP server...")

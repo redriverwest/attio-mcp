@@ -68,6 +68,7 @@ MCP_TRANSPORT=sse attio-mcp
 | `get_person_notes`               | Retrieve activity history and notes for a contact.     |
 | `get_workspace_member`           | Get workspace member details (name, email) from ID.    |
 | `search_workspace_member_by_email` | Find a workspace member by their email address.      |
+| `list_workspace_members`         | List workspace members (optionally filter by substring). |
 
 ### `search_companies` parameters
 
