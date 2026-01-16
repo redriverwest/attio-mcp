@@ -54,7 +54,7 @@ attio_client = AttioClient()
 async def search_companies(
     name: str | None = None,
     domain: str | None = None,
-    limit: int = 15,
+    limit: int = 20,
     owner_id: str | None = None,
     reminder_start: str | None = None,
     reminder_end: str | None = None,
@@ -67,7 +67,7 @@ async def search_companies(
         owner_id: Optional workspace member ID to filter by company owner
         reminder_start: Optional reminder start date (inclusive), format YYYY-MM-DD
         reminder_end: Optional reminder end date (inclusive), format YYYY-MM-DD
-        limit: Maximum number of results to return (default: 15)
+        limit: Maximum number of results to return (default: 20)
     """
     try:
         result = await attio_client.search_companies(
@@ -81,6 +81,34 @@ async def search_companies(
         return json.dumps(result, indent=2)
     except Exception as e:
         logger.error(f"Error searching companies: {e}", exc_info=True)
+        return f"Error: {str(e)}"
+
+
+@mcp.tool()
+async def list_tasks(
+    assignee: str | None = None,
+    deadline_start: str | None = None,
+    deadline_end: str | None = None,
+    limit: int = 20,
+) -> str:
+    """List tasks in Attio, optionally filtered by assignee and deadline.
+
+    Args:
+        assignee: Optional workspace member ID or email to filter by assignee
+        deadline_start: Optional deadline start date (inclusive), format YYYY-MM-DD
+        deadline_end: Optional deadline end date (inclusive), format YYYY-MM-DD
+        limit: Maximum number of results to return (default: 20)
+    """
+    try:
+        result = await attio_client.list_tasks(
+            assignee=assignee,
+            deadline_start=deadline_start,
+            deadline_end=deadline_end,
+            limit=limit,
+        )
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        logger.error(f"Error listing tasks: {e}", exc_info=True)
         return f"Error: {str(e)}"
 
 

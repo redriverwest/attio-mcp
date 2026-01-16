@@ -1,7 +1,7 @@
 """Attio API client for interacting with Attio CRM."""
 
 import logging
-from datetime import date
+from datetime import date, datetime
 from typing import Any, cast
 
 import httpx
@@ -107,7 +107,7 @@ class AttioClient:
         owner_id: str | None = None,
         reminder_start: str | None = None,
         reminder_end: str | None = None,
-        limit: int = 15,
+        limit: int = 20,
     ) -> dict[str, Any]:
         """
         Search for companies in Attio by name and optionally domain.
@@ -186,6 +186,116 @@ class AttioClient:
             raise Exception(f"Attio API error: {e.response.status_code} - {e.response.text}") from e
         except Exception as e:
             logger.error(f"Error searching companies: {e}", exc_info=True)
+            raise
+
+    async def list_tasks(
+        self,
+        assignee: str | None = None,
+        deadline_start: str | None = None,
+        deadline_end: str | None = None,
+        limit: int = 20,
+    ) -> dict[str, Any]:
+        """
+        List tasks, optionally filtered by assignee and deadline.
+
+        Args:
+            assignee: Optional workspace member ID or email to filter by assignee
+            deadline_start: Optional start date (inclusive) for filtering by deadline (YYYY-MM-DD)
+            deadline_end: Optional end date (inclusive) for filtering by deadline (YYYY-MM-DD)
+            limit: Maximum number of results to return
+
+        Returns:
+            Dictionary containing task records
+        """
+        deadline_start_date: date | None = None
+        if deadline_start is not None:
+            deadline_start_date = date.fromisoformat(deadline_start)
+
+        deadline_end_date: date | None = None
+        if deadline_end is not None:
+            deadline_end_date = date.fromisoformat(deadline_end)
+
+        if (
+            deadline_start_date is not None
+            and deadline_end_date is not None
+            and deadline_start_date > deadline_end_date
+        ):
+            raise ValueError("deadline_start must be <= deadline_end")
+
+        logger.info(
+            "Listing tasks: assignee=%s, deadline_start=%s, deadline_end=%s, limit=%s",
+            assignee,
+            deadline_start,
+            deadline_end,
+            limit,
+        )
+
+        params: dict[str, Any] = {}
+        if assignee:
+            params["assignee"] = assignee
+
+        def parse_deadline(value: str | None) -> date | None:
+            if not value or not isinstance(value, str):
+                return None
+            try:
+                if value.endswith("Z"):
+                    value = value[:-1] + "+00:00"
+                parsed = datetime.fromisoformat(value)
+            except ValueError:
+                return None
+            return parsed.date()
+
+        try:
+            if deadline_start_date is None and deadline_end_date is None:
+                params["limit"] = limit
+                response = await self.client.get("/tasks", params=params)
+                response.raise_for_status()
+                data = cast(dict[str, Any], response.json())
+                logger.info("Retrieved %s tasks", len(data.get("data", [])))
+                return data
+
+            collected: list[dict[str, Any]] = []
+            page_limit = 500
+            offset = 0
+
+            while len(collected) < limit:
+                page_params = dict(params)
+                page_params["limit"] = page_limit
+                page_params["offset"] = offset
+                response = await self.client.get("/tasks", params=page_params)
+                response.raise_for_status()
+                data = cast(dict[str, Any], response.json())
+                tasks = data.get("data", [])
+                if not tasks:
+                    break
+
+                for task in tasks:
+                    deadline_value = None
+                    if isinstance(task, dict):
+                        deadline_value = task.get("deadline_at")
+                    deadline_date = parse_deadline(deadline_value)
+                    if deadline_date is None:
+                        continue
+                    if deadline_start_date is not None and deadline_date < deadline_start_date:
+                        continue
+                    if deadline_end_date is not None and deadline_date > deadline_end_date:
+                        continue
+                    collected.append(task)
+                    if len(collected) >= limit:
+                        break
+
+                if len(tasks) < page_limit:
+                    break
+                offset += page_limit
+
+            logger.info("Retrieved %s tasks after deadline filtering", len(collected))
+            return {"data": collected[:limit]}
+
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error listing tasks: {e.response.status_code} - {e.response.text}")
+            raise Exception(f"Attio API error: {e.response.status_code} - {e.response.text}") from e
+        except Exception as e:
+            logger.error(f"Error listing tasks: {e}", exc_info=True)
             raise
 
     async def get_company_details(self, company_id: str) -> dict[str, Any]:

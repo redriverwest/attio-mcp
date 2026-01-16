@@ -61,6 +61,7 @@ MCP_TRANSPORT=sse attio-mcp
 | Tool                             | Description                                            |
 | -------------------------------- | ------------------------------------------------------ |
 | `search_companies`               | Search for companies by name, domain, and/or owner.    |
+| `list_tasks`                     | List tasks by assignee and deadline filters.           |
 | `get_company_details`            | Retrieve all attributes for a specific company record. |
 | `get_company_notes`              | Fetch all internal notes linked to a company.          |
 | `search_people`                  | Find contacts by name or email address.                |
@@ -77,7 +78,14 @@ MCP_TRANSPORT=sse attio-mcp
 - `owner_id` (optional): Workspace member ID to filter by company owner. Use `search_workspace_member_by_email` to look up a member ID.
 - `reminder_start` (optional): Filter companies whose `reminder` is on/after this date (`YYYY-MM-DD`).
 - `reminder_end` (optional): Filter companies whose `reminder` is on/before this date (`YYYY-MM-DD`).
-- `limit` (optional): Max results to return (default `15`).
+- `limit` (optional): Max results to return (default `20`).
+
+### `list_tasks` parameters
+
+- `assignee` (optional): Workspace member ID or email address to filter by assignee.
+- `deadline_start` (optional): Filter tasks whose `deadline_at` date is on/after this date (`YYYY-MM-DD`).
+- `deadline_end` (optional): Filter tasks whose `deadline_at` date is on/before this date (`YYYY-MM-DD`).
+- `limit` (optional): Max results to return (default `20`).
 
 ## Authentication
 
